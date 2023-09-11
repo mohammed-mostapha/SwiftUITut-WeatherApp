@@ -1,88 +1,118 @@
 //
 //  ContentView.swift
-//  SwiftUITut-WeatherApp
+//  SwiftUI-WeatherApp
 //
-//  Created by Mohamed Mostapha on 11/09/2023.
+//  Created by Mohamed Mostapha on 08/09/2023.
 //
 
 import SwiftUI
 import CoreData
 
 struct ContentView: View {
-    @Environment(\.managedObjectContext) private var viewContext
-
-    @FetchRequest(
-        sortDescriptors: [NSSortDescriptor(keyPath: \Item.timestamp, ascending: true)],
-        animation: .default)
-    private var items: FetchedResults<Item>
-
+    @State private var isNight = false
+    
     var body: some View {
-        NavigationView {
-            List {
-                ForEach(items) { item in
-                    NavigationLink {
-                        Text("Item at \(item.timestamp!, formatter: itemFormatter)")
-                    } label: {
-                        Text(item.timestamp!, formatter: itemFormatter)
-                    }
+        ZStack {
+            BackgroundView(isNight: $isNight)
+            VStack {
+                CityTextView(cityName: "Cupertine, CA")
+                
+                MainWeatherStatusView(imageName: isNight ? "moon.stars.fill" : "cloud.sun.fill", temperature: isNight ? 27 :  32)
+                
+                HStack(spacing: 20) {
+                    WeatherDayView(dayOfWeek: "TUE",        imageName: "cloud.sun.fill", temperature: 32)
+                    
+                    WeatherDayView(dayOfWeek: "WED",        imageName: "sun.max.fill", temperature: 40)
+                    
+                    WeatherDayView(dayOfWeek: "THUR",        imageName: "wind.snow", temperature: 22)
+                    
+                    WeatherDayView(dayOfWeek: "FRI",        imageName: "sunset.fill", temperature: 30)
+                    
+                    WeatherDayView(dayOfWeek: "SAT",        imageName: "snow", temperature: 20)
                 }
-                .onDelete(perform: deleteItems)
-            }
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    EditButton()
+                
+                Spacer()
+                
+                Button {
+                    isNight.toggle()
+                } label: {
+                    WeatherButton(title: "Change Day Time", textColor: .blue,
+                        backgroundColor: .white)
                 }
-                ToolbarItem {
-                    Button(action: addItem) {
-                        Label("Add Item", systemImage: "plus")
-                    }
-                }
-            }
-            Text("Select an item")
-        }
-    }
-
-    private func addItem() {
-        withAnimation {
-            let newItem = Item(context: viewContext)
-            newItem.timestamp = Date()
-
-            do {
-                try viewContext.save()
-            } catch {
-                // Replace this implementation with code to handle the error appropriately.
-                // fatalError() causes the application to generate a crash log and terminate. You should not use this function in a shipping application, although it may be useful during development.
-                let nsError = error as NSError
-                fatalError("Unresolved error \(nsError), \(nsError.userInfo)")
-            }
-        }
-    }
-
-    private func deleteItems(offsets: IndexSet) {
-        withAnimation {
-            offsets.map { items[$0] }.forEach(viewContext.delete)
-
-            do {
-                try viewContext.save()
-            } catch {
-                // Replace this implementation with code to handle the error appropriately.
-                // fatalError() causes the application to generate a crash log and terminate. You should not use this function in a shipping application, although it may be useful during development.
-                let nsError = error as NSError
-                fatalError("Unresolved error \(nsError), \(nsError.userInfo)")
+                
+                Spacer()
             }
         }
     }
 }
-
-private let itemFormatter: DateFormatter = {
-    let formatter = DateFormatter()
-    formatter.dateStyle = .short
-    formatter.timeStyle = .medium
-    return formatter
-}()
-
 struct ContentView_Previews: PreviewProvider {
     static var previews: some View {
-        ContentView().environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
+        ContentView()
     }
 }
+
+struct WeatherDayView: View {
+    
+    var dayOfWeek: String
+    var imageName: String
+    var temperature: Int
+    
+    var body: some View {
+        VStack {
+            Text(dayOfWeek)
+                .font(.system(size: 16, weight: .medium))
+                .foregroundColor(.white)
+            Image(systemName: imageName)
+                .renderingMode(.original)
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: 40, height: 40)
+            Text("\(temperature)°")
+                .font(.system(size: 28, weight: .medium))
+                .foregroundColor(.white)
+        }
+    }
+}
+
+struct BackgroundView: View {
+    
+    @Binding var isNight: Bool
+    
+    var body: some View {
+        LinearGradient(gradient: Gradient(colors: [isNight ? .black : .blue, isNight ? .gray : Color("lightBlue")]), startPoint: .topLeading,    endPoint: .bottomTrailing)
+            .edgesIgnoringSafeArea(.all)
+    }
+}
+
+struct CityTextView: View {
+    var cityName: String
+    
+    var body: some View {
+        Text(cityName)
+            .font(.system(size: 32, weight: .medium, design: .default))
+            .foregroundColor(.white)
+    }
+}
+
+struct MainWeatherStatusView: View {
+    
+    var imageName: String
+    var temperature: Int
+    
+    var body: some View {
+        VStack(spacing: 8) {
+            Image(systemName: imageName)
+                .renderingMode(.original)
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: 180, height: 180)
+            
+            Text("\(temperature)°")
+                .font(.system(size: 70, weight: .medium))
+                .foregroundColor(.white)
+        }
+        .padding(.bottom, 40)
+    }
+}
+
+
